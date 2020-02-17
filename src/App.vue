@@ -9,9 +9,11 @@
         @click="flipCard(i)"
         :class="{ isFlipped: cards[i].flipped }"
       >
-        <div class="card-front">front</div>
-        <div class="card-back" v-bind:style="{ background: cards[i].color }">
-          back
+        <div class="card-front">
+          <img src="./assets/cards/blue_back.jpg" />
+        </div>
+        <div class="card-back">
+          <img v-bind:src="cards[i].image" />
         </div>
       </div>
     </div>
@@ -19,28 +21,19 @@
 </template>
 
 <script>
-var shuffle = require("shuffle-array");
-let colors = [
-  "red",
-  "red",
-  "blue",
-  "blue",
-  "green",
-  "green",
-  "purple",
-  "purple",
-  "brown"
-];
+import _ from "lodash";
+import { CARD_VALUES } from "./cardUtils.js";
 
 export default {
   name: "App",
   components: {},
   data: function() {
     return {
-      cards: [...new Array(9)].map(function(_, i) {
+      cards: [...new Array(9)].map(function() {
         return {
           flipped: false,
-          color: colors[i],
+          value: CARD_VALUES[0],
+          image: require("./assets/cards/" + CARD_VALUES[0] + ".jpg"),
           matched: false
         };
       }),
@@ -48,7 +41,17 @@ export default {
     };
   },
   created: function() {
-    shuffle(this.cards);
+    let previousValue = "";
+    this.cards.forEach((v, i) => {
+      if (i % 2 === 0) {
+        v.value = CARD_VALUES[Math.floor(Math.random() * CARD_VALUES.length)];
+        previousValue = v.value;
+      } else {
+        v.value = previousValue;
+      }
+      v.image = require("./assets/cards/" + v.value + ".jpg");
+    });
+    this.cards = _.shuffle(this.cards);
   },
   computed: {
     cardsSelected: function() {
@@ -60,15 +63,17 @@ export default {
   },
   methods: {
     flipCard: function(n) {
-      if (this.cardsSelected.length < 2) {
-        this.cards[n].flipped = !this.cards[n].flipped;
+      if (!this.cards[n].flipped) {
+        if (this.cardsSelected.length < 2) {
+          this.cards[n].flipped = !this.cards[n].flipped;
+        }
+        this.checkForMatch();
+        this.checkForWin();
       }
-      this.checkForMatch();
-      this.checkForWin();
     },
     checkForMatch: function() {
       if (this.cardsSelected.length == 2) {
-        if (this.cardsSelected[0].color === this.cardsSelected[1].color) {
+        if (this.cardsSelected[0].value === this.cardsSelected[1].value) {
           this.successfulMatch();
         } else {
           this.unsuccessfulMatch();
@@ -123,10 +128,6 @@ export default {
   width: 30%;
   margin-top: auto;
   margin-bottom: auto;
-  background-color: #b5d2cb;
-  line-height: 11;
-  font-family: "Arial Black", Gadget, sans-serif;
-  color: #ffffff;
 
   /* animation stuff */
   position: relative;
@@ -138,7 +139,14 @@ export default {
   position: absolute;
   height: 100%;
   width: 100%;
-  backface-visibility: hidden;
+
+  /* only needed if using a non-image block */
+  /* backface-visibility: hidden; */
+}
+
+.card-front img,
+.card-back img {
+  height: inherit;
 }
 
 .card-back {
