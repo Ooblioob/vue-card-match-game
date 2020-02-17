@@ -1,33 +1,91 @@
 <template>
   <div id="app">
+    <h1>{{ msg }}</h1>
     <div class="container">
       <div
         v-for="(n, i) in 9"
         v-bind:key="i"
         class="card"
         @click="flipCard(i)"
-        :class="{ isFlipped: cardsFlipped[i] }"
+        :class="{ isFlipped: cards[i].flipped }"
       >
         <div class="card-front">front</div>
-        <div class="card-back">back</div>
+        <div class="card-back" v-bind:style="{ background: cards[i].color }">
+          back
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+var shuffle = require("shuffle-array");
+let colors = [
+  "red",
+  "red",
+  "blue",
+  "blue",
+  "green",
+  "green",
+  "purple",
+  "purple",
+  "brown"
+];
+
 export default {
   name: "App",
   components: {},
   data: function() {
     return {
-      cardsFlipped: new Array(9).fill(false),
-      flipMe: false
+      cards: [...new Array(9)].map(function(_, i) {
+        return {
+          flipped: false,
+          color: colors[i],
+          matched: false
+        };
+      }),
+      msg: "Match the pairs"
     };
+  },
+  created: function() {
+    shuffle(this.cards);
+  },
+  computed: {
+    cardsSelected: function() {
+      return this.cards.filter(i => i.flipped && !i.matched);
+    },
+    cardsMatched: function() {
+      return this.cards.filter(i => i.matched);
+    }
   },
   methods: {
     flipCard: function(n) {
-      this.$set(this.cardsFlipped, n, !this.cardsFlipped[n]);
+      if (this.cardsSelected.length < 2) {
+        this.cards[n].flipped = !this.cards[n].flipped;
+      }
+      this.checkForMatch();
+      this.checkForWin();
+    },
+    checkForMatch: function() {
+      if (this.cardsSelected.length == 2) {
+        if (this.cardsSelected[0].color === this.cardsSelected[1].color) {
+          this.successfulMatch();
+        } else {
+          this.unsuccessfulMatch();
+        }
+      }
+    },
+    successfulMatch: function() {
+      this.cardsSelected.forEach(i => (i.matched = true));
+    },
+    unsuccessfulMatch: function() {
+      let vm = this;
+      setTimeout(() => vm.cardsSelected.map(i => (i.flipped = false)), 1000);
+    },
+    checkForWin: function() {
+      if (this.cardsMatched.length === 8) {
+        this.msg = "You Win!";
+      }
     }
   }
 };
@@ -84,8 +142,9 @@ export default {
 }
 
 .card-back {
-  background: blue;
   transform: rotateY(180deg);
+  height: 100%;
+  width: 100%;
 }
 
 .card.isFlipped {
