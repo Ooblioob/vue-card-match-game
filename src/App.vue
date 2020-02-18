@@ -1,10 +1,14 @@
 <template>
   <div id="app">
     <h1>{{ msg }}</h1>
-    <div class="container">
+    <button @click="unflipAndReset">Start Over?</button>
+    <button @click="shuffle">Shuffle</button>
+    <button @click="unflip">Unflip</button>
+
+    <transition-group name="card" tag="div" class="container">
       <div
-        v-for="(n, i) in 9"
-        v-bind:key="i"
+        v-for="(n, i) in deckSize"
+        v-bind:key="cards[i].index"
         class="card"
         @click="flipCard(i)"
         :class="{ isFlipped: cards[i].flipped }"
@@ -16,7 +20,7 @@
           <img v-bind:src="cards[i].image" />
         </div>
       </div>
-    </div>
+    </transition-group>
   </div>
 </template>
 
@@ -29,29 +33,13 @@ export default {
   components: {},
   data: function() {
     return {
-      cards: [...new Array(9)].map(function() {
-        return {
-          flipped: false,
-          value: CARD_VALUES[0],
-          image: require("./assets/cards/" + CARD_VALUES[0] + ".jpg"),
-          matched: false
-        };
-      }),
+      cards: [],
+      deckSize: 9,
       msg: "Match the pairs"
     };
   },
   created: function() {
-    let previousValue = "";
-    this.cards.forEach((v, i) => {
-      if (i % 2 === 0) {
-        v.value = CARD_VALUES[Math.floor(Math.random() * CARD_VALUES.length)];
-        previousValue = v.value;
-      } else {
-        v.value = previousValue;
-      }
-      v.image = require("./assets/cards/" + v.value + ".jpg");
-    });
-    this.cards = _.shuffle(this.cards);
+    this.reset();
   },
   computed: {
     cardsSelected: function() {
@@ -88,9 +76,44 @@ export default {
       setTimeout(() => vm.cardsSelected.map(i => (i.flipped = false)), 1000);
     },
     checkForWin: function() {
-      if (this.cardsMatched.length === 8) {
+      if (this.cardsMatched.length === Math.floor(this.deckSize / 2)) {
         this.msg = "You Win!";
       }
+    },
+    reset: function() {
+      this.cards = [...new Array(this.deckSize)];
+      for (let i = 0; i < this.cards.length; i++) {
+        let value =
+          i % 2 === 0
+            ? CARD_VALUES[_.random(CARD_VALUES.length)]
+            : this.cards[i - 1].value;
+        this.cards[i] = {
+          index: i,
+          flipped: false,
+          value: value,
+          image: require("./assets/cards/" + value + ".jpg"),
+          matched: false
+        };
+      }
+      this.msg = "Match the pairs";
+      this.shuffle();
+    },
+    unflipAndReset: function() {
+      if (this.cards.some(v => v.flipped)) {
+        this.unflip();
+
+        // wait for the animation to complete
+        let vm = this;
+        setTimeout(() => vm.reset(), 1000);
+      } else {
+        this.reset();
+      }
+    },
+    shuffle: function() {
+      this.cards = _.shuffle(this.cards);
+    },
+    unflip: function() {
+      this.cards.forEach(v => ((v.flipped = false), (v.matched = false)));
     }
   }
 };
@@ -157,5 +180,9 @@ export default {
 
 .card.isFlipped {
   transform: rotateY(180deg);
+}
+
+.card-move {
+  transition: transform 1s;
 }
 </style>
