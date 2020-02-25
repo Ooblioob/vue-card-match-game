@@ -11,7 +11,10 @@ export default new Vuex.Store({
   getters: {
     cardsSelected: state => state.cards.filter(v => v.flipped && !v.matched),
     cardsMatched: state => state.cards.filter(v => v.matched),
-    getCard: state => index => state.cards[index]
+    hasMatchingPair: state => index =>
+      state.cards.some(
+        (card, i) => card.value === state.cards[index].value && i !== index
+      )
   },
   mutations: {
     addCard(state, payload) {
