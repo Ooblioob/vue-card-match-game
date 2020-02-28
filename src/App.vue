@@ -11,7 +11,7 @@
         v-bind:key="card.id"
         v-bind:card="card"
         v-bind:position="i"
-        v-on:cardFlip="checkCards"
+        v-on:cardClick="onCardClick"
       >
       </card>
     </transition-group>
@@ -45,7 +45,8 @@ export default {
     ...mapGetters(["cardsSelected", "cardsMatched"])
   },
   methods: {
-    checkCards: function() {
+    onCardClick: function(index) {
+      this.$store.commit("flipCard", { index });
       this.checkForMatch();
       this.checkForWin();
     },

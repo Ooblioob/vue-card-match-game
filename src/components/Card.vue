@@ -22,8 +22,7 @@ export default {
   },
   methods: {
     flipCard: function() {
-      this.$store.commit("flipCard", { index: this.$attrs.position });
-      this.$emit("cardFlip", this.$attrs.index);
+      this.$emit("cardClick", this.$attrs.position);
     }
   }
 };
